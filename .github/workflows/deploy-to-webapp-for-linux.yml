@@ -1,0 +1,41 @@
+name: Deploy to Azure Web App for Linux
+
+on:
+  workflow_dispatch:
+    inputs:
+      sourceName:
+        description: Source Code (Web1 or Web2)
+        required: true
+      webAppName:
+        description: Web App Name
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Login via Azure CLI
+        uses: azure/login@v1
+        with:
+          cred: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup .Net core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Build and Publish
+        run: |
+          dotnet restore './src/${{ github.event.inputs.sourceName }}'
+          dotnet build './src/${{ github.event.inputs.sourceName }}' -c Release
+          dotnet publish './src/${{ github.event.inputs.sourceName }}' -c Release -o './src/${{ github.event.inputs.sourceName }}/output'
+      
+      - name: Deploy to Web Apps
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ github.event.inputs.webAppName }}
+          package: './src/${{ github.event.inputs.sourceName }}/output'
