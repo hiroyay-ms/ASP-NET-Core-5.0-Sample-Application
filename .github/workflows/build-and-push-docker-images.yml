@@ -1,0 +1,24 @@
+name: Build and Push image to Azure Container Registry
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Login via Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGINSERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Docker Build and Push
+        run: |
+          docker build ./src/web -t ${{ secrets.REGISTRY_LOGINSERVER }}/${{ secrets.REPOSITORY_NAME }}:${{ github.sha }} -f ./src/docker-codes/Dockerfile
+          docker push ${{ secrets.REGISTRY_LOGINSERVER }}/${{ secrets.REPOSITORY_NAME }}:${{ github.sha }}
