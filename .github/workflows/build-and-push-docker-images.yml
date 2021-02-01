@@ -24,5 +24,5 @@ jobs:
 
       - name: Docker Build and Push
         run: |
-          docker build ./src/web -t ${{ secrets.REGISTRY_LOGINSERVER }}/${{ secrets.REPOSITORY_NAME }}:${{ github.event.inputs.imageTag }} -f ./src/docker-codes/Dockerfile
+          docker build ./src/Web1 -t ${{ secrets.REGISTRY_LOGINSERVER }}/${{ secrets.REPOSITORY_NAME }}:${{ github.event.inputs.imageTag }} -f ./src/docker-codes/Dockerfile
           docker push ${{ secrets.REGISTRY_LOGINSERVER }}/${{ secrets.REPOSITORY_NAME }}:${{ github.event.inputs.imageTag }}
