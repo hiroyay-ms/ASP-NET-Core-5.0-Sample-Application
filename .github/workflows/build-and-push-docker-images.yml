@@ -24,4 +24,4 @@ jobs:
 
       - name: Docker Build and Push
         run: |
-          docker build . -t v1 -f ./src/docker-codes/Dockerfile
+          docker build ./src/Web1 -t v1 -f ./src/docker-codes/Dockerfile
