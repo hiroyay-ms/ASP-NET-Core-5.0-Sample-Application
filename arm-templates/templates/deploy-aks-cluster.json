@@ -1,0 +1,186 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksClusterName": {
+            "type": "string",
+            "defaultValue": "aksCluster-1",
+            "metadata": {
+                "description": "Kubernetes クラスター名"
+            }
+        },
+        "kubernetesVersion": {
+            "type": "string",
+            "defaultValue": "1.17.11",
+            "allowedValues": [
+                "1.16.13",
+                "1.16.15",
+                "1.17.9",
+                "1.17.11",
+                "1.18.6",
+                "1.18.8"
+            ],
+            "metadata": {
+                "description": "Kubernetes バージョン"
+            }
+        },
+        "nodeCount": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "ノード数"
+            }
+        },
+        "nodeSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2s_v3",
+            "allowedValues": [
+                "Standard_D2s_v3",
+                "Standard_D4s_v3",
+                "Standard_D8s_v3"
+            ],
+            "metadata": {
+                "description": "ノードのインスタンス サイズ"
+            }
+        },
+        "vaultName": {
+            "type": "string",
+            "defaultValue": "Lionhead",
+            "metadata": {
+                "description": "Key Vault コンテナー名"
+            }
+        },
+        "vaultResourceGroupName": {
+            "type": "string",
+            "defaultValue": "Common-Resources-RG",
+            "metadata": {
+                "description": "Key Vault が所属するリソース グループ"
+            }
+        },
+        "servicePrincipalClientIdSecretName": {
+            "type": "string",
+            "defaultValue": "Key Vault - Service Principal",
+            "metadata": {
+                "description": "Key Vault シークレット名（サービス プリンシパル ID）"
+            }
+        },
+        "servicePrincipalClientSecretSecretName": {
+            "type": "string",
+            "defaultValue": "Key Vault - Secret",
+            "metadata": {
+                "description": "Key Vault シークレット名（サービス プリンシパル シークレット）"
+            }
+        }
+    },
+    "variables": {
+        "keyVaultResourceId": "[resourceId(parameters('vaultResourceGroupName'), 'Microsoft.KeyVault/vaults', parameters('vaultName'))]"
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2018-05-01",
+        "name": "AKS",
+        "properties": {
+          "mode": "Incremental",
+          "expressionEvaluationOptions": {
+            "scope": "inner"
+          },
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+                "clusterName": {
+                    "type": "string"
+                },
+                "clusterVersion": {
+                    "type": "string"
+                },
+                "node": {
+                    "type": "int"
+                },
+                "instanceSize": {
+                    "type": "string"
+                },
+                "servicePrincipalClientId": {
+                    "type": "string"
+                },
+                "servicePrincipalClientSecret": {
+                    "type": "securestring"
+                }
+            },
+            "variables": {},
+            "resources": [
+                {
+                    "name": "[parameters('clusterName')]",
+                    "type": "Microsoft.ContainerService/managedClusters",
+                    "apiVersion": "2020-02-01",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                        "kubernetesVersion": "[parameters('clusterVersion')]",
+                        "enableRBAC": true,
+                        "dnsPrefix": "dnsprefix",
+                        "agentPoolProfiles": [
+                            {
+                                "name": "agentpool",
+                                "count": "[parameters('node')]",
+                                "vmSize": "[parameters('instanceSize')]",
+                                "osType": "Linux",
+                                "storageProfile": "ManagedDisks",
+                                "type": "VirtualMachineScaleSets",
+                                "maxPods": 100,
+                                "availabilityZones": [
+                                    "1",
+                                    "2",
+                                    "3"
+                                ]
+                            }
+                        ],
+                        "servicePrincipalProfile": {
+                            "clientId": "[parameters('servicePrincipalClientId')]",
+                            "secret": "[parameters('servicePrincipalClientSecret')]"
+                        },
+                        "networkProfile": {
+                            "networkPlugin": "kubenet",
+                            "loadBalancerSku": "standard"
+                        }
+                    }
+                }
+            ],
+            "outputs": {}
+          },
+          "parameters": {
+              "clusterName": {
+                  "value": "[parameters('aksClusterName')]"
+              },
+              "clusterVersion": {
+                  "value": "[parameters('kubernetesVersion')]"
+              },
+              "node": {
+                  "value": "[parameters('nodeCount')]"
+              },
+              "instanceSize": {
+                  "value": "[parameters('nodeSize')]"
+              },
+              "servicePrincipalClientId": {
+                  "reference": {
+                      "keyVault": {
+                          "id": "[variables('keyVaultResourceId')]"
+                      },
+                      "secretName": "[parameters('servicePrincipalClientIdSecretName')]"
+                  }
+              },
+              "servicePrincipalClientSecret": {
+                  "reference": {
+                      "keyVault": {
+                          "id": "[variables('keyVaultResourceId')]"
+                      },
+                      "secretName": "[parameters('servicePrincipalClientSecretSecretName')]"
+                  }
+              }
+          }
+        }
+      }
+    ],
+    "outputs": {
+    }
+  }
