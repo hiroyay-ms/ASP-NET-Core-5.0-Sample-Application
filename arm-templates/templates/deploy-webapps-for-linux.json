@@ -1,0 +1,80 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "string",
+            "metadata": {
+                "description": "アプリケーション名"
+            }
+        },
+        "hostingPlanName": {
+            "type": "string",
+            "metadata": {
+                "description": "App Service Plan 名"
+            }
+        },
+        "skuCode": {
+            "type": "string",
+            "defaultValue": "P1V2",
+            "allowedValues": [
+                "S1",
+                "S2",
+                "S3",
+                "P1V2",
+                "P2V2",
+                "P3V2",
+                "P1V3",
+                "P2V3",
+                "P3V3"
+            ],
+            "metadata": {
+                "description": "価格レベル（S1-3, P1-3V2, P1-3V3 の中から選択）"
+            }
+        }
+    },
+    "functions": [],
+    "variables": {
+        "planSkuTier": "[if(contains(parameters('skuCode'), 'S'), 'Standard', if(contains(parameters('skuCode'), 'V2'), 'PremiumV2', 'PremiumV3'))]",
+        "linuxFxVersion": "DOTNETCORE|3.1"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-02-01",
+            "name": "[parameters('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourceGroup().location]",
+            "kind": "linux",
+            "properties": {
+                "name": "[parameters('hostingPlanName')]",
+                "workerSize": "3",
+                "workerSizeId": "3",
+                "numberOfWorkers": "1",
+                "reserved": true
+            },
+            "sku": {
+                "Tier": "[variables('planSkuTier')]",
+                "Name": "[parameters('skuCode')]"
+            }
+        },
+     {
+         "name": "[parameters('name')]",
+         "type": "Microsoft.Web/sites",
+         "apiVersion": "2018-11-01",
+         "location": "[resourceGroup().location]",
+         "kind": "app",
+         "tags": {},
+         "dependsOn": [
+             "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+         ],
+         "properties": {
+             "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+             "siteConfig": {
+                 "appSettings": [],
+                 "linuxFxVersion": "[variables('linuxFxVersion')]"
+             }
+         }
+     }
+    ],
+    "outputs": {}
+}

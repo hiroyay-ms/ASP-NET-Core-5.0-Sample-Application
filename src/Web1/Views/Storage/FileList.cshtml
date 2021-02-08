@@ -1,0 +1,140 @@
+@{
+    ViewData["Title"] = "Upload a file to Azure Blob Storage";
+}
+<style>
+
+</style>
+
+<div>
+    <h1 class="display-4">Upload a file to Azure Blob Storage</h4>
+</div>
+
+<div class="row" style="border-bottom: 1px solid #999; margin: 0px 0px 40px;">&nbsp;</div>
+
+<div class="row">
+    <ul id="blobList" class="storage-list-ul">
+        @foreach (var item in ViewData["Blobs"] as IList<FileContent>)
+        {
+            <li class="storage-list-li">
+                <span><img src="~/images/@item.Icon" height="30" /></span>
+                <span class="filename-span">@item.Name</span>
+                <span>（@item.ContentLength）</span>
+                <span>&nbsp;-&nbsp;@item.LastModified.ToShortDateString()</span>
+            </li>
+        }
+    </ul>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <input type="file" name="doc" id="postedFile" style="visibility: hidden;" />
+            <div id="droparea" style="height: 100px; text-align: center; border: 2px dashed #aaa;">
+                <div class="row">
+                    <div class="col-md-1">
+                        <img src="~/images/loading.gif" id="progress" style="visibility: hidden; margin: 15px" />
+                    </div>
+                    <div class="col-md-10">
+                        <h2 id="droptext" style="color: #aaa; margin: 25px 0px;">Drop file here.</h2>
+                    </div>
+                    <div class="col-md-1"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            $("#droparea").on("dragenter", function (event) {
+                event.stopPropagation();
+                event.preventDefault();
+                $("#droparea").css("border", "2px solid #333");
+                $("#droptext").css("color", "#333");
+            });
+
+            $("#droparea").on("dragover", function (event) {
+                event.stopPropagation();
+                event.preventDefault();
+                $("#droparea").css("border", "2px solid #333");
+                $("#droptext").css("color", "#333");
+            });
+
+            $("#droparea").on("dragleave", function (event) {
+                event.stopPropagation();
+                event.preventDefault();
+                $("#droparea").css("border", "2px dashed #aaa");
+                $("#droptext").css("color", "#aaa");
+            });
+
+            $("#droparea").on("drop", function (event) {
+                event.preventDefault();
+
+                $("#postedFile")[0].files = event.originalEvent.dataTransfer.files;
+
+                if ($("#postedFile")[0].files.length > 1) {
+                    alert("");
+                    $("postedFile").val("");
+                    return;
+                }
+
+                var fd = new FormData(document.querySelector("form"));
+
+                $.ajax({
+                    url: "FileUpload",
+                    type: "post",
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    success: function (result) {
+                        var json = JSON.parse(result);
+                        alert(json.Comment);
+
+                        var lastModified = new Date(json.LastModified);
+
+                        var liElement = document.createElement("li");
+                        liElement.className = "storage-list-li-new";
+
+                        var iconElement = document.createElement("img");
+                        iconElement.src = "../images/" + json.Icon;
+                        iconElement.height = 30;
+
+                        var nameElement = document.createElement("span");
+                        nameElement.className = "filename-span";
+                        nameElement.textContent = json.Name;
+
+                        var sizeElement = document.createElement("span");
+                        sizeElement.textContent = "（" + json.ContentLength + "）";
+
+                        var dateElement = document.createElement("span");
+                        dateElement.textContent = " - " + lastModified.toLocaleDateString();
+
+                        liElement.appendChild(iconElement);
+                        liElement.appendChild(nameElement);
+                        liElement.appendChild(sizeElement);
+                        liElement.appendChild(dateElement);
+
+                        var ulElement = document.getElementById("blobList");
+                        ulElement.lastElementChild.className = "storage-list-li";
+                        ulElement.appendChild(liElement);
+                    },
+                    error: function() {
+                        alert("File upload failed.");
+                    },
+                    beforeSend: function() {
+                        $("#progress").css("visibility", "visible");
+                    },
+                    complete: function() {
+                        $("#progress").css("visibility", "hidden");
+                        $("#droparea").css("border", "2px dashed #aaa");
+                        $("#droptext").css("color", "#aaa");
+                    }
+                });
+            });
+        });
+    </script>
+}
