@@ -133,7 +133,7 @@ namespace Web1.Controllers
             BlobHttpHeaders httpHeaders = new BlobHttpHeaders();
             httpHeaders.ContentType = file.ContentType;
 
-            //blobClient.Upload(memoryStream, httpHeaders);
+            blobClient.Upload(memoryStream, httpHeaders);
 
             FileContent item = new FileContent()
             {

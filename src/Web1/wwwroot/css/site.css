@@ -94,6 +94,15 @@ body {
   list-style-type: none!important;
 }
 
+.storage-list-li-result {
+    color: #006600;
+    border-left: 6px solid #008000;
+    background-color: #e6ffe9;
+    margin-bottom: 3px;
+    padding: 5px;
+    list-style-type: none !important;
+}
+
 .filename-span {
   margin: 0px 0px 0px 10px;
 }

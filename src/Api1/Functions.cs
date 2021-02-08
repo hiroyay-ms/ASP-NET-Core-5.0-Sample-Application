@@ -68,7 +68,7 @@ namespace FunctionApp
             return sasUri.ToString();
         }
 
-        [FunctionName("Negotiate")]
+        [FunctionName("negotiate")]
         public static SignalRConnectionInfo GetSignalRInfo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             [SignalRConnectionInfo(HubName = "notifs")] SignalRConnectionInfo connectionInfo)
@@ -84,7 +84,9 @@ namespace FunctionApp
         {
             log.LogInformation("Activity Trigger function processed a request.");
 
-            string message = "{\"uri\":\"" + blobUri + "\"}";
+            string[] words = blobUri.Split('?');
+
+            string message = "{\"fileName\": \"" + words[0] + "\", \"token\":\"" + words[1] + "\", \"uri\":\"" + blobUri + "\"}";
 
             return signalRMessage.AddAsync(
                 new SignalRMessage

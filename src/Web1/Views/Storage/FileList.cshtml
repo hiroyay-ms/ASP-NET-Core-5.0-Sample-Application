@@ -46,8 +46,20 @@
     </div>
 </form>
 
+<br />
+
+<div class="row">
+    <div class="col-md-12" style="padding: 15px;">
+        <ul id="result" class="storage-list-ul" style="visibility: hidden;">
+            <li class="storage-list-li-result">test</li>
+        </ul>
+    </div>
+</div>
+
 @section Scripts
 {
+    <script src="~/js/signalr/dist/browser/signalr.js"></script>
+    <script src="~/js/notifs.js"></script>
     <script>
         $(document).ready(function () {
             $("#droparea").on("dragenter", function (event) {
@@ -74,6 +86,7 @@
             $("#droparea").on("drop", function (event) {
                 event.preventDefault();
 
+                $("result").css("visibility", "hidden");
                 $("#postedFile")[0].files = event.originalEvent.dataTransfer.files;
 
                 if ($("#postedFile")[0].files.length > 1) {
