@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           pushd './.'
-          dotnet build --configuration Release --output ./output
+          dotnet build './src/${{ github.event.inputs.AZURE_FUNCTIONAPP_PACKAGE_PATH }}' --configuration Release --output ./output
           popd
           
       - name: Run Azure Functions Action
