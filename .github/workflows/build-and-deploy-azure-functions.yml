@@ -10,7 +10,7 @@ on:
         description: Azure Functions Path
         required: true
 env:
-  DOTNET_VERSION: '3.1.x'
+  DOTNET_VERSION: '3.1.100'
 
 jobs:
   build-and-deploy:
@@ -28,7 +28,7 @@ jobs:
       - name: Resolve Project Dependencies Using DotNet
         shell: bash
         run: |
-          pushd './src/${{ github.event.inputs.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          pushd './${{ github.event.inputs.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
           
