@@ -1,6 +1,31 @@
 document.addEventListener("DOMContentLoaded", () => {
+    var apiBaseUrl = "";
+
+    var fd = new FormData();
+    fd.append("paramName", "UserSettings:ApiBaseUrl");
+
+    function getValue()
+    {
+        $.ajax({
+            url: "/Storage/GetConfigurationValue",
+            type: "post",
+            data: fd,
+            async: false,
+            processData: false,
+            contentType: false,
+            success: function (parameterValue) {
+                apiBaseUrl = parameterValue;
+            },
+            error: function () {
+                alert("Failed to get the configuration.");
+            }
+        });
+    }
+
+    getValue();
+
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl("https://frogfish.azurewebsites.net/api")
+        .withUrl(apiBaseUrl)
         .configureLogging(signalR.LogLevel.Information)
         .build();
 
