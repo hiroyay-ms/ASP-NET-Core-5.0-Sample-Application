@@ -112,6 +112,14 @@ namespace Web1.Controllers
         }
 
         [HttpPost]
+        public IActionResult GetConfigurationValue(string paramName)
+        {
+            var parameterValue = _configuration.GetValue<string>(paramName);
+
+            return Json(parameterValue);
+        }
+
+        [HttpPost]
         public IActionResult FileUpload()
         {
             IFormFile file = Request.Form.Files[0];
