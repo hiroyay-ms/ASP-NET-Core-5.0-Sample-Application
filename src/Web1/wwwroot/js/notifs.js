@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:7071/api")
+        .withUrl("https://frogfish.azurewebsites.net/api")
         .configureLogging(signalR.LogLevel.Information)
         .build();
 
