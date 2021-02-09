@@ -19,7 +19,7 @@ using Azure.Storage.Blobs.Models;
 
 namespace Web1.Controllers
 {
-    [AllowAnonymous]
+    [Authorize]
     public class StorageController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -117,6 +117,9 @@ namespace Web1.Controllers
             IFormFile file = Request.Form.Files[0];
             var filePath = Path.GetTempFileName();
             var fileName = file.FileName.Substring(file.FileName.LastIndexOf("\\") + 1);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                file.CopyTo(stream);
 
             var memoryStream = new MemoryStream();
             using (var fileStream = new FileStream(filePath, FileMode.Open))
