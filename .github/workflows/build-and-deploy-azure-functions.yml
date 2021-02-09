@@ -27,7 +27,7 @@ jobs:
 
       - name: Resolve Project Dependencies Using DotNet
         shell: bash
-        run:
+        run: |
           pushd './src/${{ github.event.inputs.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
