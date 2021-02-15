@@ -33,15 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function newMessage(message) {
         var json = JSON.parse(message);
 
-        alert("SAS Token creation finished!");
+        alert("SAS Token creation finished!\n\nnotified " + json.sendTo + " by email.");
 
         var liElement = document.createElement("li");
         liElement.className = "storage-list-li-result";
-        liElement.innerHTML = json.fileName + "<br />" + json.token;
+        liElement.innerHTML = "File: " + json.fileUrl + "<br />Token: " + json.sasToken + "<br />Expiry Date: " + json.expiryDate;
 
         var ulElement = document.getElementById("result");
-        ulElement.removeChild(ulElement.firstElementChild);
-        ulElement.style.visibility = "visible";
         ulElement.appendChild(liElement);
     }
 

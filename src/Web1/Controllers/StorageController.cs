@@ -16,6 +16,8 @@ using Web1.Models;
 
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Microsoft.AspNetCore.SignalR.Protocol;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Web1.Controllers
 {
@@ -51,7 +53,9 @@ namespace Web1.Controllers
                 items.Add(item);
             }
 
-            ViewData["Blobs"] = items;
+            items.Sort((a, b) => b.LastModified.CompareTo(a.LastModified));
+
+            ViewData["Blobs"] = items.Take<FileContent>(5);
 
             return View();
         }
@@ -146,6 +150,20 @@ namespace Web1.Controllers
 
             blobClient.Upload(memoryStream, httpHeaders);
 
+            IDictionary<string, string> metaData = new Dictionary<string, string>();
+            foreach (var claim in User.Claims)
+            {
+                if (claim.Type.Contains("email"))
+                {
+                    metaData.Add("UploadedBy", claim.Value);
+
+                    break;
+                }
+            }
+
+            if (metaData.Count > 0)
+                blobClient.SetMetadata(metaData);
+
             FileContent item = new FileContent()
             {
                 Icon = GetIcon(fileName),
@@ -155,8 +173,6 @@ namespace Web1.Controllers
                 LastModified = DateTime.Now.Date,
                 Comment = $"{file.Length} bytes uploaded successfully!"
             };
-
-            //Thread.Sleep(3000);
 
             var result = JsonConvert.SerializeObject(item);
 
