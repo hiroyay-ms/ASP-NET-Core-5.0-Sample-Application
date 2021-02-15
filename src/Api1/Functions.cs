@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.EventGrid.Models;
@@ -26,20 +28,26 @@ namespace FunctionApp
         {
             var outputs = new List<string>();
 
-            string sasUri = await context.CallActivityAsync<string>("CreateSasToken", context.GetInput<EventGridEvent>());
+            string responseMessage = await context.CallActivityAsync<string>("GenerateSasToken", context.GetInput<EventGridEvent>());
+            outputs.Add($"Created a SAS Token: {responseMessage}");
 
-            outputs.Add(await context.CallActivityAsync<string>("SendMessage", sasUri));
+            outputs.Add(await context.CallActivityAsync<string>("SendEmail", responseMessage));
+
+            string signalRMessage = await context.CallActivityAsync<string>("SendMessage", responseMessage);
+            outputs.Add($"Sent to SignalR: {signalRMessage}");
 
             return outputs;
         }
 
-        [FunctionName("CreateSasToken")]
-        public static string CreateSasToken(
+        [FunctionName("GenerateSasToken")]
+        public static string GenerateSasToken(
             [ActivityTrigger] EventGridEvent eventGridEvent,
             ILogger log)
         {
             var createdEvent = ((JObject)eventGridEvent.Data).ToObject<StorageBlobCreatedEventData>();
             var blobUrl = createdEvent.Url;
+
+            DateTimeOffset dto = DateTimeOffset.Now;
 
             string fileName = blobUrl.Substring(blobUrl.LastIndexOf("/") + 1);
 
@@ -50,6 +58,7 @@ namespace FunctionApp
             BlobContainerClient containerClient = serviceClient.GetBlobContainerClient(containerName);
 
             BlobClient blobClient = containerClient.GetBlobClient(fileName);
+            BlobProperties properties = blobClient.GetProperties();
 
             BlobSasBuilder sasBuilder = new BlobSasBuilder()
             {
@@ -58,14 +67,43 @@ namespace FunctionApp
                 Resource = "b"
             };
 
-            sasBuilder.ExpiresOn = DateTimeOffset.Now.AddDays(7);
+            sasBuilder.ExpiresOn = dto.AddDays(7);
             sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
             Uri sasUri = blobClient.GenerateSasUri(sasBuilder);
 
             log.LogInformation($"FileName: {fileName} - sasUri: {sasUri}");
 
-            return sasUri.ToString();
+            string[] words = sasUri.ToString().Split("?");
+
+            var data = new ResponseMessage()
+            {
+                FileName = fileName,
+                FileUrl = words[0],
+                SasToken = words[1],
+                SasUri = sasUri.ToString(),
+                LastModifiedDate = dto.ToString("yyyy/MM/dd"),
+                ExpiryDate = dto.AddDays(7).ToString("yyyy/MM-dd"),
+                SendTo = properties.Metadata["UploadedBy"]
+            };
+
+            return JsonSerializer.Serialize(data);
+        }
+
+        [FunctionName("SendEmail")]
+        public static async Task<string> SendEmail(
+            [ActivityTrigger] string message,
+            ILogger log
+        )
+        {
+            log.LogInformation("Activity Trigger function(SendEmail) processed a request.");
+
+            var logicAppUrl = Environment.GetEnvironmentVariable("LogicAppUrl");
+
+            var httpClient = new HttpClient();
+            var response = await httpClient.PostAsync(logicAppUrl, new StringContent(message, Encoding.UTF8, "application/json"));
+
+            return $"Call logic apps -StatusCode: {response.StatusCode.ToString()}";
         }
 
         [FunctionName("negotiate")]
@@ -78,15 +116,11 @@ namespace FunctionApp
 
         [FunctionName("SendMessage")]
         public static Task SendMessage (
-            [ActivityTrigger] string blobUri,
+            [ActivityTrigger] string message,
             [SignalR(HubName = "notifs")] IAsyncCollector<SignalRMessage> signalRMessage,
             ILogger log)
         {
-            log.LogInformation("Activity Trigger function processed a request.");
-
-            string[] words = blobUri.Split('?');
-
-            string message = "{\"fileName\": \"" + words[0] + "\", \"token\":\"" + words[1] + "\", \"uri\":\"" + blobUri + "\"}";
+            log.LogInformation("Activity Trigger function(SendMessage) processed a request.");
 
             return signalRMessage.AddAsync(
                 new SignalRMessage
