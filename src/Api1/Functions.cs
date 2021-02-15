@@ -83,7 +83,7 @@ namespace FunctionApp
                 SasToken = words[1],
                 SasUri = sasUri.ToString(),
                 LastModifiedDate = dto.ToString("yyyy/MM/dd"),
-                ExpiryDate = dto.AddDays(7).ToString("yyyy/MM-dd"),
+                ExpiryDate = dto.AddDays(7).ToString("yyyy/MM/dd"),
                 SendTo = properties.Metadata["UploadedBy"]
             };
 
