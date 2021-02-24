@@ -115,7 +115,7 @@ namespace FunctionApp
         }
 
         [FunctionName("negotiate")]
-        public SignalRConnectionInfo GetSignalRInfo(
+        public static SignalRConnectionInfo GetSignalRInfo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             [SignalRConnectionInfo(HubName = "notifs")] SignalRConnectionInfo connectionInfo)
         {
