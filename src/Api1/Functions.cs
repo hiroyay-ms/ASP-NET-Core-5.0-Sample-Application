@@ -12,7 +12,6 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.SignalRService;
 using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Azure.Storage.Blobs;
@@ -21,17 +20,10 @@ using Azure.Storage.Sas;
 
 namespace FunctionApp
 {
-    public class Functions
+    public static class Functions
     {
-        private readonly IConfiguration _configuration;
-
-        public Functions(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         [FunctionName("RunOrchestrator")]
-        public async Task<List<string>> RunOrchestrator(
+        public static async Task<List<string>> RunOrchestrator(
             [OrchestrationTrigger] IDurableOrchestrationContext context)
         {
             var outputs = new List<string>();
@@ -48,7 +40,7 @@ namespace FunctionApp
         }
 
         [FunctionName("GenerateSasToken")]
-        public string GenerateSasToken(
+        public static string GenerateSasToken(
             [ActivityTrigger] EventGridEvent eventGridEvent,
             ILogger log)
         {
@@ -59,8 +51,8 @@ namespace FunctionApp
 
             string fileName = blobUrl.Substring(blobUrl.LastIndexOf("/") + 1);
 
-            string connectionString = _configuration.GetValue<string>("UserSettings:Yellowtail-ConnectionString");
-            string containerName = _configuration.GetValue<string>("UserSettings:ContainerName");
+            string connectionString = Environment.GetEnvironmentVariable("YellowtailConnectionString");
+            string containerName = Environment.GetEnvironmentVariable("BlobContainerName");
 
             BlobServiceClient serviceClient = new BlobServiceClient(connectionString);
             BlobContainerClient containerClient = serviceClient.GetBlobContainerClient(containerName);
@@ -99,14 +91,14 @@ namespace FunctionApp
         }
 
         [FunctionName("SendEmail")]
-        public async Task<string> SendEmail(
+        public static async Task<string> SendEmail(
             [ActivityTrigger] string message,
             ILogger log
         )
         {
             log.LogInformation("Activity Trigger function(SendEmail) processed a request.");
 
-            var logicAppUrl = _configuration.GetValue<string>("UserSettings:LogicAppUrl");
+            var logicAppUrl = Environment.GetEnvironmentVariable("LogicAppUrl");
 
             var httpClient = new HttpClient();
             var response = await httpClient.PostAsync(logicAppUrl, new StringContent(message, Encoding.UTF8, "application/json"));
@@ -115,7 +107,7 @@ namespace FunctionApp
         }
 
         [FunctionName("negotiate")]
-        public SignalRConnectionInfo GetSignalRInfo(
+        public static SignalRConnectionInfo GetSignalRInfo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             [SignalRConnectionInfo(HubName = "notifs")] SignalRConnectionInfo connectionInfo)
         {
@@ -123,7 +115,7 @@ namespace FunctionApp
         }
 
         [FunctionName("SendMessage")]
-        public Task SendMessage (
+        public static Task SendMessage (
             [ActivityTrigger] string message,
             [SignalR(HubName = "notifs")] IAsyncCollector<SignalRMessage> signalRMessage,
             ILogger log)
@@ -140,7 +132,7 @@ namespace FunctionApp
         }
 
         [FunctionName("Orchestration_Start")]
-        public async Task Run(
+        public static async Task Run(
             [EventGridTrigger] EventGridEvent eventGridEvent,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
