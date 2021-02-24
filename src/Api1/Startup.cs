@@ -25,11 +25,6 @@ namespace FunctionApp
 
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            var context = builder.GetContext();
-
-            builder.Services.AddSingleton(x =>
-                new BlobServiceClient(context.Configuration.GetValue<string>("UserSettings:Yellowtail-ConnectionString"))
-            );
         }
     }
 }
