@@ -24,13 +24,10 @@ namespace FunctionApp
     public class Functions
     {
         private readonly IConfiguration _configuration;
-        private readonly BlobServiceClient _serviceClient;
 
-        public Functions(IConfiguration configuration, BlobServiceClient serviceClient)
+        public Functions(IConfiguration configuration)
         {
             _configuration = configuration;
-
-            _serviceClient = serviceClient;
         }
 
         [FunctionName("RunOrchestrator")]
@@ -61,9 +58,12 @@ namespace FunctionApp
             DateTimeOffset dto = DateTimeOffset.Now;
 
             string fileName = blobUrl.Substring(blobUrl.LastIndexOf("/") + 1);
+
+            string connectionString = _configuration.GetValue<string>("UserSettings:Yellowtail-ConnectionString");
             string containerName = _configuration.GetValue<string>("UserSettings:ContainerName");
 
-            BlobContainerClient containerClient = _serviceClient.GetBlobContainerClient(containerName);
+            BlobServiceClient serviceClient = new BlobServiceClient(connectionString);
+            BlobContainerClient containerClient = serviceClient.GetBlobContainerClient(containerName);
 
             BlobClient blobClient = containerClient.GetBlobClient(fileName);
             BlobProperties properties = blobClient.GetProperties();
@@ -115,7 +115,7 @@ namespace FunctionApp
         }
 
         [FunctionName("negotiate")]
-        public static SignalRConnectionInfo GetSignalRInfo(
+        public SignalRConnectionInfo GetSignalRInfo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             [SignalRConnectionInfo(HubName = "notifs")] SignalRConnectionInfo connectionInfo)
         {
