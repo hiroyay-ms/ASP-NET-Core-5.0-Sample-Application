@@ -24,10 +24,14 @@ namespace FunctionApp
     public class Functions
     {
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
+        private readonly BlobServiceClient _serviceClient;
 
-        public Functions(IConfiguration configuration)
+        public Functions(IConfiguration configuration, IHttpClientFactory clientFactory, BlobServiceClient serviceClient)
         {
             _configuration = configuration;
+            _httpClient = clientFactory.CreateClient();
+            _serviceClient = serviceClient;
         }
 
         [FunctionName("RunOrchestrator")]
@@ -59,13 +63,9 @@ namespace FunctionApp
 
             string fileName = blobUrl.Substring(blobUrl.LastIndexOf("/") + 1);
 
-            //string connectionString = Environment.GetEnvironmentVariable("YellowtailConnectionString");
-            //string containerName = Environment.GetEnvironmentVariable("BlobContainerName");
-            string connectionString = _configuration.GetValue<string>("UserSettings:Yellowtail-ConnectionString");
             string containerName = _configuration.GetValue<string>("UserSettings:ContainerName");
 
-            BlobServiceClient serviceClient = new BlobServiceClient(connectionString);
-            BlobContainerClient containerClient = serviceClient.GetBlobContainerClient(containerName);
+            BlobContainerClient containerClient = _serviceClient.GetBlobContainerClient(containerName);
 
             BlobClient blobClient = containerClient.GetBlobClient(fileName);
             BlobProperties properties = blobClient.GetProperties();
@@ -108,11 +108,9 @@ namespace FunctionApp
         {
             log.LogInformation("Activity Trigger function(SendEmail) processed a request.");
 
-            //var logicAppUrl = Environment.GetEnvironmentVariable("LogicAppUrl");
             string logicAppUrl = _configuration.GetValue<string>("UserSettings:LogicAppUrl");
 
-            var httpClient = new HttpClient();
-            var response = await httpClient.PostAsync(logicAppUrl, new StringContent(message, Encoding.UTF8, "application/json"));
+            var response = await _httpClient.PostAsync(logicAppUrl, new StringContent(message, Encoding.UTF8, "application/json"));
 
             return $"Call logic apps -StatusCode: {response.StatusCode.ToString()}";
         }
