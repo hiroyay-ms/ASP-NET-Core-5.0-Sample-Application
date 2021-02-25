@@ -13,7 +13,7 @@ namespace FunctionApp
         {
             builder.ConfigurationBuilder.AddAzureAppConfiguration(option =>
             {
-                option.Connect(Environment.GetEnvironmentVariable("ConnectionStrings:AppConfig"))
+                option.Connect(Environment.GetEnvironmentVariable("AppConfig"))
                     .ConfigureKeyVault(kv =>
                     {
                         kv.SetCredential(new DefaultAzureCredential());
