@@ -9,6 +9,9 @@ on:
       imageTag:
         description: Tag
         required: true
+      slotName:
+        description: Slot name
+        required: true
 
 jobs:
   deploy:
@@ -27,6 +30,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ github.event.inputs.webAppName }}
+          slot-name: ${{ github.event.inputs.slotName }}
           images: ${{ secrets.REGISTRY_LOGINSERVER }}/${{ secrets.REPOSITORY_NAME}}:${{ github.event.inputs.imageTag }}
 
       - name: Azure logout
